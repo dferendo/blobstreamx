@@ -1,5 +1,7 @@
-use std::fs;
+use std::collections::HashMap;
 use std::path::Path;
+#[allow(unused_imports)]
+use std::{env, fs};
 
 use async_trait::async_trait;
 use ethers::types::H256;
@@ -27,6 +29,8 @@ pub struct DataCommitment {
 
 #[async_trait]
 pub trait DataCommitmentInputs {
+    fn bridge_commitment_new() -> Self;
+
     async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32];
 
     /// Get signed headers in the range [start_block_number, end_block_number] inclusive.
@@ -54,6 +58,44 @@ const MAX_NUM_RETRIES: usize = 3;
 
 #[async_trait]
 impl DataCommitmentInputs for InputDataFetcher {
+    fn bridge_commitment_new() -> Self {
+        dotenv::dotenv().ok();
+
+        #[allow(unused_mut)]
+        #[allow(unused_assignments)]
+        let mut urls = vec![];
+
+        #[allow(unused_mut)]
+        let mut fixture_path = String::new();
+
+        #[allow(unused_mut)]
+        let mut mode;
+
+        #[cfg(test)]
+        {
+            mode = InputDataMode::Fixture;
+            fixture_path.push_str("./circuits/fixtures/mocha-4")
+        }
+        #[cfg(not(test))]
+        {
+            mode = InputDataMode::Rpc;
+            // TENDERMINT_RPC_URL is a list of comma separated tendermint rpc urls.
+            urls = env::var("TENDERMINT_RPC_URL")
+                .expect("TENDERMINT_RPC_URL is not set in .env")
+                .split(',')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+        }
+
+        Self {
+            mode,
+            urls,
+            fixture_path: fixture_path.to_string(),
+            proof_cache: HashMap::new(),
+            save: false,
+        }
+    }
+
     async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32] {
         // If start_block == end_block, then return a dummy commitment.
         // This will occur in the context of data commitment's map reduce when leaves that contain blocks beyond the end_block.

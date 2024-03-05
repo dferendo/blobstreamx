@@ -4,6 +4,7 @@ use std::str::FromStr;
 use alloy_primitives::{Address, Bytes, FixedBytes, B256};
 use alloy_sol_types::{sol, SolType};
 use anyhow::Result;
+use blobstreamx::input::DataCommitmentInputs;
 use ethers::abi::AbiEncode;
 use ethers::contract::abigen;
 use ethers::providers::{Http, Provider};
@@ -64,7 +65,7 @@ impl BlobstreamXOperator {
             local_relay_mode: local_relay_mode_bool,
         };
 
-        let data_fetcher = InputDataFetcher::default();
+        let data_fetcher = InputDataFetcher::bridge_commitment_new();
 
         let succinct_rpc_url = env::var("SUCCINCT_RPC_URL").expect("SUCCINCT_RPC_URL must be set");
         let succinct_api_key = env::var("SUCCINCT_API_KEY").expect("SUCCINCT_API_KEY must be set");
