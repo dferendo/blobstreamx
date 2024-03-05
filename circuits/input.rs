@@ -204,7 +204,7 @@ impl DataCommitmentInputs for InputDataFetcher {
 
                 let data_hash_proof = self.get_inclusion_proof::<PROTOBUF_HASH_SIZE_BYTES, F>(
                     &signed_header.header,
-                    DATA_HASH_INDEX as u64,
+                    LAST_RESULTS_HASH_INDEX as u64,
                     signed_header.header.data_hash.unwrap().encode_vec(),
                 );
                 data_hash_proofs.push(data_hash_proof);
