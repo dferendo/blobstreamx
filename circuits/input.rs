@@ -24,7 +24,7 @@ pub struct DataCommitmentResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct DataCommitment {
-    pub data_commitment: String,
+    pub bridge_commitment: String,
 }
 
 #[async_trait]
@@ -40,6 +40,8 @@ pub trait DataCommitmentInputs {
         end_block_number: u64,
     ) -> Vec<SignedHeader>;
 
+    /// Gets the bridge commitment hash specified by the start block and end block, where
+    /// end block is non-inclusive.
     async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32];
 
     async fn get_data_commitment_inputs<const MAX_LEAVES: usize, F: RichField>(
@@ -164,7 +166,7 @@ impl DataCommitmentInputs for InputDataFetcher {
         let v: DataCommitmentResponse =
             serde_json::from_str(&fetched_result).expect("Failed to parse JSON");
 
-        hex::decode_upper(v.result.data_commitment)
+        hex::decode_upper(v.result.bridge_commitment)
             .unwrap()
             .try_into()
             .unwrap()
@@ -324,7 +326,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_signed_header_range() {
         let start_block = 2u64;
-        let end_block = 6u64; // Not inclusive
+        let end_block = 6u64; // Inclusive
 
         let data_fetcher = InputDataFetcher::override_new();
 
@@ -380,6 +382,28 @@ mod tests {
                 "968EBC34F6B2CA1BEB91AC6C03BA28E21B50430DB9796383844F628C0EC178B9",
             )
             .unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_data_commitment() {
+        let start_block = 2u64;
+        let end_block = 6u64; // Not inclusive
+
+        let mut data_fetcher = InputDataFetcher::override_new();
+
+        let data_commitment = data_fetcher
+            .get_data_commitment(start_block, end_block)
+            .await;
+
+        assert_eq!(
+            data_commitment,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "E500CAFCB924FDC462D06861B9CFB425007375D3A11288E31919E2DEEB02419D",
+            )
+            .unwrap()
+            .as_bytes()
         );
     }
 }
