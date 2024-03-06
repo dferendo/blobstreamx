@@ -65,7 +65,7 @@ impl BlobstreamXOperator {
             local_relay_mode: local_relay_mode_bool,
         };
 
-        let data_fetcher = InputDataFetcher::bridge_commitment_new();
+        let data_fetcher = InputDataFetcher::override_new();
 
         let succinct_rpc_url = env::var("SUCCINCT_RPC_URL").expect("SUCCINCT_RPC_URL must be set");
         let succinct_api_key = env::var("SUCCINCT_API_KEY").expect("SUCCINCT_API_KEY must be set");

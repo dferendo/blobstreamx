@@ -29,9 +29,9 @@ pub struct DataCommitment {
 
 #[async_trait]
 pub trait DataCommitmentInputs {
-    fn bridge_commitment_new() -> Self;
-
-    async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32];
+    /// Overrides the default TendermintX's InputDataFetcher so that the tests from this repo
+    /// uses fixtures instead of requiring a Tendermint RPC.
+    fn override_new() -> Self;
 
     /// Get signed headers in the range [start_block_number, end_block_number] inclusive.
     async fn get_signed_header_range(
@@ -39,6 +39,8 @@ pub trait DataCommitmentInputs {
         start_block_number: u64,
         end_block_number: u64,
     ) -> Vec<SignedHeader>;
+
+    async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32];
 
     async fn get_data_commitment_inputs<const MAX_LEAVES: usize, F: RichField>(
         &mut self,
@@ -58,7 +60,7 @@ const MAX_NUM_RETRIES: usize = 3;
 
 #[async_trait]
 impl DataCommitmentInputs for InputDataFetcher {
-    fn bridge_commitment_new() -> Self {
+    fn override_new() -> Self {
         dotenv::dotenv().ok();
 
         #[allow(unused_mut)]
@@ -74,7 +76,7 @@ impl DataCommitmentInputs for InputDataFetcher {
         #[cfg(test)]
         {
             mode = InputDataMode::Fixture;
-            fixture_path.push_str("./circuits/fixtures/mocha-4")
+            fixture_path.push_str("./circuits/fixtures/petrol-1")
         }
         #[cfg(not(test))]
         {
@@ -94,6 +96,33 @@ impl DataCommitmentInputs for InputDataFetcher {
             proof_cache: HashMap::new(),
             save: false,
         }
+    }
+
+    async fn get_signed_header_range(
+        &self,
+        start_block_number: u64,
+        end_block_number: u64,
+    ) -> Vec<SignedHeader> {
+        // Note: Tested with 500+ concurrent requests, but monitor for any issues.
+        const MAX_BATCH_SIZE: usize = 200;
+
+        let mut signed_headers = Vec::new();
+        let mut curr_block = start_block_number;
+        while curr_block <= end_block_number {
+            let batch_end_block =
+                std::cmp::min(curr_block + MAX_BATCH_SIZE as u64, end_block_number + 1);
+            // Batch request the headers in the range [curr_block, batch_end_block).
+            let batch_signed_header_futures = (curr_block..batch_end_block)
+                .map(|i| self.get_signed_header_from_number(i))
+                .collect::<Vec<_>>();
+            let batch_signed_headers: Vec<SignedHeader> =
+                futures::future::join_all(batch_signed_header_futures).await;
+            signed_headers.extend(batch_signed_headers);
+
+            curr_block += MAX_BATCH_SIZE as u64;
+        }
+
+        signed_headers
     }
 
     async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32] {
@@ -139,33 +168,6 @@ impl DataCommitmentInputs for InputDataFetcher {
             .unwrap()
             .try_into()
             .unwrap()
-    }
-
-    async fn get_signed_header_range(
-        &self,
-        start_block_number: u64,
-        end_block_number: u64,
-    ) -> Vec<SignedHeader> {
-        // Note: Tested with 500+ concurrent requests, but monitor for any issues.
-        const MAX_BATCH_SIZE: usize = 200;
-
-        let mut signed_headers = Vec::new();
-        let mut curr_block = start_block_number;
-        while curr_block <= end_block_number {
-            let batch_end_block =
-                std::cmp::min(curr_block + MAX_BATCH_SIZE as u64, end_block_number + 1);
-            // Batch request the headers in the range [curr_block, batch_end_block).
-            let batch_signed_header_futures = (curr_block..batch_end_block)
-                .map(|i| self.get_signed_header_from_number(i))
-                .collect::<Vec<_>>();
-            let batch_signed_headers: Vec<SignedHeader> =
-                futures::future::join_all(batch_signed_header_futures).await;
-            signed_headers.extend(batch_signed_headers);
-
-            curr_block += MAX_BATCH_SIZE as u64;
-        }
-
-        signed_headers
     }
 
     async fn get_data_commitment_inputs<const MAX_LEAVES: usize, F: RichField>(
@@ -300,5 +302,84 @@ impl DataCommitmentInputs for InputDataFetcher {
             last_block_id_proofs_formatted,
             expected_data_commitment,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tendermint::hash::{Algorithm, Hash};
+    use tendermintx::input::{InputDataFetcher, InputDataMode};
+
+    use crate::input::DataCommitmentInputs;
+
+    #[test]
+    fn test_override_new() {
+        let data_fetcher = InputDataFetcher::override_new();
+
+        // Verify that fixture is used during testing.
+        assert_eq!(data_fetcher.fixture_path, "./circuits/fixtures/petrol-1");
+        assert_eq!(data_fetcher.mode, InputDataMode::Fixture);
+    }
+
+    #[tokio::test]
+    async fn test_get_signed_header_range() {
+        let start_block = 2u64;
+        let end_block = 6u64; // Not inclusive
+
+        let data_fetcher = InputDataFetcher::override_new();
+
+        let signed_headers = data_fetcher
+            .get_signed_header_range(start_block, end_block)
+            .await;
+
+        // Height 2
+        assert_eq!(
+            signed_headers[0].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "FE94BC2499C787658D30BEBC0568137C6C87AB9D1541AA349B9FFF543F911C0A",
+            )
+            .unwrap()
+        );
+
+        // Height 3
+        assert_eq!(
+            signed_headers[1].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "2807906161A2F47B5F14EE6073B7890C2296E8CD818734945B453E90FE236D2F",
+            )
+            .unwrap()
+        );
+
+        // Height 4
+        assert_eq!(
+            signed_headers[2].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "17E547014E7781230C6461926C87B617F9BA8CF5338A7C753A85A7B3CB457EE8",
+            )
+            .unwrap()
+        );
+
+        // Height 5
+        assert_eq!(
+            signed_headers[3].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "AB5B58FE379D2217650D6D981F258DE84849300C963C7F5E25100267BA835414",
+            )
+            .unwrap()
+        );
+
+        // Height 6
+        assert_eq!(
+            signed_headers[4].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "968EBC34F6B2CA1BEB91AC6C03BA28E21B50430DB9796383844F628C0EC178B9",
+            )
+            .unwrap()
+        );
     }
 }

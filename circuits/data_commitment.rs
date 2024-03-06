@@ -28,7 +28,7 @@ impl<const MAX_LEAVES: usize, L: PlonkParameters<D>, const D: usize> AsyncHint<L
         let start_block = input_stream.read_value::<U64Variable>();
         let end_block = input_stream.read_value::<U64Variable>();
 
-        let mut data_fetcher = InputDataFetcher::bridge_commitment_new();
+        let mut data_fetcher = InputDataFetcher::override_new();
 
         let result = data_fetcher
             .get_data_commitment_inputs::<MAX_LEAVES, L::Field>(start_block, end_block)
