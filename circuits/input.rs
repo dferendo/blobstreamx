@@ -44,6 +44,10 @@ pub trait DataCommitmentInputs {
     /// end block is non-inclusive.
     async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32];
 
+    /// Gets an inclusion proof per block in the bridge commitment specified by the start and
+    /// end block, where end block is non-inclusive.
+    ///
+    /// TODO: optimize to use one query instead 1 per block.
     async fn get_data_commitment_inputs<const MAX_LEAVES: usize, F: RichField>(
         &mut self,
         start_block_number: u64,
