@@ -104,13 +104,13 @@ impl DataCommitmentInputs for InputDataFetcher {
         }
 
         let file_name = format!(
-            "{}/{}-{}/data_commitment.json",
+            "{}/{}-{}/bridge_commitment.json",
             self.fixture_path,
             start_block.to_string().as_str(),
             end_block.to_string().as_str()
         );
         let route = format!(
-            "data_commitment?start={}&end={}",
+            "bridge_commitment?start={}&end={}",
             start_block.to_string().as_str(),
             end_block.to_string().as_str()
         );
@@ -198,14 +198,15 @@ impl DataCommitmentInputs for InputDataFetcher {
 
             // Don't include the data hash and corresponding proof of end_block, as the circuit's
             // data_commitment is computed over the range [start_block, end_block - 1].
-            if i < end_block_number {
-                let data_hash = signed_header.header.data_hash.unwrap();
+            // TODO: Comment
+            if i > start_block_number {
+                let data_hash = signed_header.header.last_results_hash.unwrap();
                 data_hashes.push(data_hash.as_bytes().try_into().unwrap());
 
                 let data_hash_proof = self.get_inclusion_proof::<PROTOBUF_HASH_SIZE_BYTES, F>(
                     &signed_header.header,
                     LAST_RESULTS_HASH_INDEX as u64,
-                    signed_header.header.data_hash.unwrap().encode_vec(),
+                    signed_header.header.last_results_hash.unwrap().encode_vec(),
                 );
                 data_hash_proofs.push(data_hash_proof);
             }
