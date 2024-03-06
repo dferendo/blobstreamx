@@ -406,7 +406,7 @@ pub(crate) mod tests {
         end_height: usize,
     ) -> (DataCommitmentProofValueType<MAX_LEAVES, F>, H256) {
         dotenv::dotenv().ok();
-        let mut input_data_fetcher = InputDataFetcher::default();
+        let mut input_data_fetcher = InputDataFetcher::override_new();
 
         let rt = Runtime::new().expect("failed to create tokio runtime");
 
@@ -439,7 +439,7 @@ pub(crate) mod tests {
 
         const MAX_LEAVES: usize = 4;
         const NUM_BLOCKS: usize = 4;
-        const START_BLOCK: usize = 10000;
+        const START_BLOCK: usize = 2;
         const END_BLOCK: usize = START_BLOCK + NUM_BLOCKS;
 
         let data_commitment_var = builder.read::<DataCommitmentProofVariable<MAX_LEAVES>>();
