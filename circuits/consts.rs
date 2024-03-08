@@ -21,3 +21,13 @@ pub const ENC_DATA_ROOT_TUPLE_SIZE_BYTES: usize = 64;
 pub const BLOCK_HEIGHT_INDEX: usize = 2;
 pub const LAST_BLOCK_ID_INDEX: usize = 4;
 pub const DATA_HASH_INDEX: usize = 6;
+
+/// Petrol-1's chain config.
+pub const PETROL_1_CHAIN_ID_BYTES: &[u8] = b"petrol-1";
+pub const PETROL_1_CHAIN_ID_SIZE_BYTES: usize = PETROL_1_CHAIN_ID_BYTES.len();
+#[derive(Debug, Clone, PartialEq)]
+pub struct Petrol1Config;
+impl TendermintConfig<PETROL_1_CHAIN_ID_SIZE_BYTES> for Petrol1Config {
+    const CHAIN_ID_BYTES: &'static [u8] = PETROL_1_CHAIN_ID_BYTES;
+    const SKIP_MAX: usize = SKIP_MAX;
+}
