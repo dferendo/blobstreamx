@@ -9,6 +9,7 @@
 
 use std::env;
 
+use blobstreamx::input::DataCommitmentInputs;
 use clap::Parser;
 use tendermintx::input::InputDataFetcher;
 

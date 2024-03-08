@@ -4,6 +4,7 @@ use std::str::FromStr;
 use alloy_primitives::{Address, Bytes, FixedBytes, B256};
 use alloy_sol_types::{sol, SolType};
 use anyhow::Result;
+use blobstreamx::input::DataCommitmentInputs;
 use ethers::abi::AbiEncode;
 use ethers::contract::abigen;
 use ethers::providers::{Http, Provider};
