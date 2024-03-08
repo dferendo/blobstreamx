@@ -34,7 +34,6 @@ impl<
             prev_block_number,
             prev_header_hash,
         );
-
         // Prove the data commitment (which only includes the prev_block_number's data hash).
         let data_commitment = builder.prove_next_header_data_commitment(
             prev_block_number,
@@ -64,9 +63,9 @@ mod tests {
     use ethers::types::H256;
     use plonky2x::prelude::{DefaultBuilder, GateRegistry, HintRegistry};
     use subtle_encoding::hex;
-    use tendermintx::config::{Mocha4Config, MOCHA_4_CHAIN_ID_SIZE_BYTES};
 
     use super::*;
+    use crate::consts::{Petrol1Config, PETROL_1_CHAIN_ID_SIZE_BYTES};
 
     #[test]
     #[cfg_attr(feature = "ci", ignore)]
@@ -78,14 +77,14 @@ mod tests {
         let mut builder = DefaultBuilder::new();
 
         log::debug!("Defining circuit");
-        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, MOCHA_4_CHAIN_ID_SIZE_BYTES, Mocha4Config>::define(&mut builder);
+        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, PETROL_1_CHAIN_ID_SIZE_BYTES, Petrol1Config>::define(&mut builder);
         let circuit = builder.build();
         log::debug!("Done building circuit");
 
         let mut hint_registry = HintRegistry::new();
         let mut gate_registry = GateRegistry::new();
-        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, MOCHA_4_CHAIN_ID_SIZE_BYTES, Mocha4Config>::register_generators(&mut hint_registry);
-        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, MOCHA_4_CHAIN_ID_SIZE_BYTES, Mocha4Config>::register_gates(&mut gate_registry);
+        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, PETROL_1_CHAIN_ID_SIZE_BYTES, Petrol1Config>::register_generators(&mut hint_registry);
+        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, PETROL_1_CHAIN_ID_SIZE_BYTES, Petrol1Config>::register_gates(&mut gate_registry);
 
         circuit.test_serializers(&gate_registry, &hint_registry);
     }
@@ -100,7 +99,7 @@ mod tests {
         let mut builder = DefaultBuilder::new();
 
         log::debug!("Defining circuit");
-        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, MOCHA_4_CHAIN_ID_SIZE_BYTES, Mocha4Config>::define(&mut builder);
+        CombinedStepCircuit::<MAX_VALIDATOR_SET_SIZE, PETROL_1_CHAIN_ID_SIZE_BYTES, Petrol1Config>::define(&mut builder);
 
         log::debug!("Building circuit");
         let circuit = builder.build();
@@ -132,10 +131,9 @@ mod tests {
     fn test_next_header_small() {
         const MAX_VALIDATOR_SET_SIZE: usize = 4;
 
-        // This block is on Mocha-4 testnet.
-        let start_block = 500u64;
+        let start_block = 2u64;
         let start_header_hash =
-            hex::decode_upper("46604E5FF15811D674CBAF2067DE6479A381EEC1BA046B90508939A685B40AE7")
+            hex::decode_upper("FE94BC2499C787658D30BEBC0568137C6C87AB9D1541AA349B9FFF543F911C0A")
                 .unwrap();
 
         test_next_header_template::<MAX_VALIDATOR_SET_SIZE>(

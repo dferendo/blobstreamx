@@ -176,7 +176,7 @@ impl<L: PlonkParameters<D>, const D: usize> DataCommitmentBuilder<L, D> for Circ
             let is_last_block = self.is_equal(last_block_to_process, curr_idx);
             let is_not_last_block = self.not(is_last_block);
 
-            // The computed root of data_hash_proofs[i] should be the hash of block curr_idx.
+            // The computed root of data_hash_proofs[i] should be the hash of block curr_idx+1.
             let data_hash_proof_root = self
                 .get_root_from_merkle_proof::<HEADER_PROOF_DEPTH, PROTOBUF_HASH_SIZE_BYTES>(
                     &data_comm_proof.data_hash_proofs[i],
@@ -189,7 +189,6 @@ impl<L: PlonkParameters<D>, const D: usize> DataCommitmentBuilder<L, D> for Circ
                     &last_block_id_path,
                 );
 
-            // TODO: something def need to change here
             // Extract the previous header hash from the leaf of last_block_id_proof, and verify it is equal to the header hash of block curr_idx.
             // Note: The leaf of the last_block_id_proof against block curr_idx+1 is the protobuf-encoded last_block_id, which contains the header hash of block curr_idx at [2..2+HASH_SIZE].
             // This check is skipped if curr_block >= last_block_to_process (which is marked by the flag curr_block_disabled).
@@ -199,6 +198,8 @@ impl<L: PlonkParameters<D>, const D: usize> DataCommitmentBuilder<L, D> for Circ
             self.assert_is_equal(prev_header_check, true_bool);
 
             // Verify the data hash proof is valid against block curr_idx.
+
+            // TODO: something def need to change here
             let is_data_hash_proof_valid = self.is_equal(data_hash_proof_root, header_hash.into());
             let data_hash_check = self.or(curr_block_disabled, is_data_hash_proof_valid);
             self.assert_is_equal(data_hash_check, true_bool);
@@ -474,7 +475,7 @@ pub(crate) mod tests {
         let mut builder = CircuitBuilder::<L, D>::new();
 
         const MAX_LEAVES: usize = 4;
-        const START_BLOCK: usize = 10000;
+        const START_BLOCK: usize = 2;
         const END_BLOCK: usize = START_BLOCK + MAX_LEAVES;
 
         let data_commitment_var = builder.read::<DataCommitmentProofVariable<MAX_LEAVES>>();

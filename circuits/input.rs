@@ -204,16 +204,14 @@ impl DataCommitmentInputs for InputDataFetcher {
         for i in start_block_number..end_block_number + 1 {
             let signed_header = &signed_headers[(i - start_block_number) as usize];
 
-            // Don't include the data hash and corresponding proof of end_block, as the circuit's
-            // data_commitment is computed over the range [start_block, end_block - 1].
-            // TODO: Comment
-
             // The hashes used to calculate the bridge commitment are obtained from the
             // last_results_hash of Height + 1. Thus the bridge_commitment circuit only requires
             // the last results hash's of blocks in the range [start_block + 1, end_block]
             if i > start_block_number {
                 let data_hash = signed_header.header.last_results_hash.unwrap();
                 data_hashes.push(data_hash.as_bytes().try_into().unwrap());
+
+                println!("data_hash from block {:?}, {:?}", i, data_hash);
 
                 let data_hash_proof = self.get_inclusion_proof::<PROTOBUF_HASH_SIZE_BYTES, F>(
                     &signed_header.header,
