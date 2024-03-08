@@ -90,9 +90,9 @@ mod tests {
     use ethers::types::H256;
     use plonky2x::prelude::{DefaultBuilder, GateRegistry, HintRegistry};
     use subtle_encoding::hex;
-    use tendermintx::config::{Mocha4Config, MOCHA_4_CHAIN_ID_SIZE_BYTES};
 
     use super::*;
+    use crate::consts::{Petrol1Config, PETROL_1_CHAIN_ID_SIZE_BYTES};
 
     #[test]
     #[cfg_attr(feature = "ci", ignore)]
@@ -108,8 +108,8 @@ mod tests {
         log::debug!("Defining circuit");
         CombinedSkipCircuit::<
             MAX_VALIDATOR_SET_SIZE,
-            MOCHA_4_CHAIN_ID_SIZE_BYTES,
-            Mocha4Config,
+            PETROL_1_CHAIN_ID_SIZE_BYTES,
+            Petrol1Config,
             NB_MAP_JOBS,
             BATCH_SIZE,
         >::define(&mut builder);
@@ -120,15 +120,15 @@ mod tests {
         let mut gate_registry = GateRegistry::new();
         CombinedSkipCircuit::<
             MAX_VALIDATOR_SET_SIZE,
-            MOCHA_4_CHAIN_ID_SIZE_BYTES,
-            Mocha4Config,
+            PETROL_1_CHAIN_ID_SIZE_BYTES,
+            Petrol1Config,
             NB_MAP_JOBS,
             BATCH_SIZE,
         >::register_generators(&mut hint_registry);
         CombinedSkipCircuit::<
             MAX_VALIDATOR_SET_SIZE,
-            MOCHA_4_CHAIN_ID_SIZE_BYTES,
-            Mocha4Config,
+            PETROL_1_CHAIN_ID_SIZE_BYTES,
+            Petrol1Config,
             NB_MAP_JOBS,
             BATCH_SIZE,
         >::register_gates(&mut gate_registry);
@@ -154,8 +154,8 @@ mod tests {
         log::debug!("Defining circuit");
         CombinedSkipCircuit::<
             MAX_VALIDATOR_SET_SIZE,
-            MOCHA_4_CHAIN_ID_SIZE_BYTES,
-            Mocha4Config,
+            PETROL_1_CHAIN_ID_SIZE_BYTES,
+            Petrol1Config,
             NB_MAP_JOBS,
             BATCH_SIZE,
         >::define(&mut builder);
@@ -193,14 +193,13 @@ mod tests {
         const NB_MAP_JOBS: usize = 2;
         const BATCH_SIZE: usize = 2;
 
-        // These blocks are on Mocha-4 testnet.
-        let start_block = 500u64;
+        let start_block = 2u64;
         let start_header_hash =
-            hex::decode_upper("46604E5FF15811D674CBAF2067DE6479A381EEC1BA046B90508939A685B40AE7")
+            hex::decode_upper("6CC3FB1D4379F9D21F8944CAB76901A1DC8D45F08A64A8ABE2D8436BA5E298C4")
                 .unwrap();
-        let end_block = 504u64;
+        let end_block = 6u64;
         let _ =
-            hex::decode_upper("9B6321EC17F092E770724792611E6C9FC3A0FF162CE341B353D6AD31FB75D1C2")
+            hex::decode_upper("11F76B0D87679841CAC3BE7918BE6E8D0308CB9B7AD5C79A04EB53159779E25A")
                 .unwrap();
 
         test_header_range_template::<MAX_VALIDATOR_SET_SIZE, NB_MAP_JOBS, BATCH_SIZE>(

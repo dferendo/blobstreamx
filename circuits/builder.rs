@@ -435,7 +435,7 @@ pub(crate) mod tests {
 
         const MAX_LEAVES: usize = 4;
         const NUM_BLOCKS: usize = 4;
-        const START_BLOCK: usize = 10000;
+        const START_BLOCK: usize = 2;
         const END_BLOCK: usize = START_BLOCK + NUM_BLOCKS;
 
         let data_commitment_var = builder.read::<DataCommitmentProofVariable<MAX_LEAVES>>();
@@ -470,7 +470,7 @@ pub(crate) mod tests {
         let mut builder = CircuitBuilder::<L, D>::new();
 
         const MAX_LEAVES: usize = 4;
-        const START_BLOCK: usize = 10000;
+        const START_BLOCK: usize = 2;
         const END_BLOCK: usize = START_BLOCK + MAX_LEAVES;
 
         let data_commitment_var = builder.read::<DataCommitmentProofVariable<MAX_LEAVES>>();
@@ -485,7 +485,7 @@ pub(crate) mod tests {
 
         let mut input = circuit.input();
 
-        // Generate test cases from Celestia blocks:
+        // Generate test cases from Petrol-1 blocks:
         input.write::<DataCommitmentProofVariable<MAX_LEAVES>>(
             generate_data_commitment_value_inputs(START_BLOCK, END_BLOCK).0,
         );
