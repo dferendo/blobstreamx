@@ -1,4 +1,5 @@
 pub use tendermint::merkle::HASH_SIZE;
+use tendermintx::config::{TendermintConfig, SKIP_MAX};
 
 /// The number of bits in a protobuf-encoded SHA256 hash.
 pub const PROTOBUF_HASH_SIZE_BYTES: usize = HASH_SIZE + 2;

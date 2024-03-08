@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -22,7 +23,7 @@ pub struct DataCommitmentResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct DataCommitment {
-    pub data_commitment: String,
+    pub bridge_commitment: String,
 }
 
 #[async_trait]
@@ -166,7 +167,7 @@ impl DataCommitmentInputs for InputDataFetcher {
         let v: DataCommitmentResponse =
             serde_json::from_str(&fetched_result).expect("Failed to parse JSON");
 
-        hex::decode_upper(v.result.data_commitment)
+        hex::decode_upper(v.result.bridge_commitment)
             .unwrap()
             .try_into()
             .unwrap()
@@ -208,7 +209,7 @@ impl DataCommitmentInputs for InputDataFetcher {
 
                 let data_hash_proof = self.get_inclusion_proof::<PROTOBUF_HASH_SIZE_BYTES, F>(
                     &signed_header.header,
-                    DATA_HASH_INDEX as u64,
+                    LAST_RESULTS_HASH_INDEX as u64,
                     signed_header.header.data_hash.unwrap().encode_vec(),
                 );
                 data_hash_proofs.push(data_hash_proof);
@@ -303,5 +304,106 @@ impl DataCommitmentInputs for InputDataFetcher {
             last_block_id_proofs_formatted,
             expected_data_commitment,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tendermint::hash::{Algorithm, Hash};
+    use tendermintx::input::{InputDataFetcher, InputDataMode};
+
+    use crate::input::DataCommitmentInputs;
+
+    #[test]
+    fn test_override_new() {
+        let data_fetcher = InputDataFetcher::override_new();
+
+        // Verify that fixture is used during testing.
+        assert_eq!(data_fetcher.fixture_path, "./circuits/fixtures/petrol-1");
+        assert_eq!(data_fetcher.mode, InputDataMode::Fixture);
+    }
+
+    #[tokio::test]
+    async fn test_get_signed_header_range() {
+        let start_block = 2u64;
+        let end_block = 6u64; // Inclusive
+
+        let data_fetcher = InputDataFetcher::override_new();
+
+        let signed_headers = data_fetcher
+            .get_signed_header_range(start_block, end_block)
+            .await;
+
+        // Height 2
+        assert_eq!(
+            signed_headers[0].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "6CC3FB1D4379F9D21F8944CAB76901A1DC8D45F08A64A8ABE2D8436BA5E298C4",
+            )
+            .unwrap()
+        );
+
+        // Height 3
+        assert_eq!(
+            signed_headers[1].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "9F2C593C74DA25ACDC34474C845463360E244EE15BFDC52D8308AB9339B95CC2",
+            )
+            .unwrap()
+        );
+
+        // Height 4
+        assert_eq!(
+            signed_headers[2].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "3836C723CCFC773A0CB7D6AA9382B9F8BE0128B60504CBB8770D22EB4251B9A9",
+            )
+            .unwrap()
+        );
+
+        // Height 5
+        assert_eq!(
+            signed_headers[3].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "4D02C05EB799C82F28E14E28741A7142E1D0370369B6DE83B0DFA1886C1F7717",
+            )
+            .unwrap()
+        );
+
+        // Height 6
+        assert_eq!(
+            signed_headers[4].commit.block_id.hash,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "11F76B0D87679841CAC3BE7918BE6E8D0308CB9B7AD5C79A04EB53159779E25A",
+            )
+            .unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_data_commitment() {
+        let start_block = 2u64;
+        let end_block = 6u64; // Not inclusive
+
+        let mut data_fetcher = InputDataFetcher::override_new();
+
+        let data_commitment = data_fetcher
+            .get_data_commitment(start_block, end_block)
+            .await;
+
+        assert_eq!(
+            data_commitment,
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "BCC70C867ACDEF1BF569308071806404B5202BAE0EB52E951A32B619978675DF",
+            )
+            .unwrap()
+            .as_bytes()
+        );
     }
 }

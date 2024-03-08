@@ -9,6 +9,7 @@
 
 use std::env;
 
+use blobstreamx::input::DataCommitmentInputs;
 use clap::Parser;
 use log::info;
 use tendermintx::input::InputDataFetcher;
@@ -25,7 +26,7 @@ pub async fn main() {
     env::set_var("RUST_LOG", "info");
     dotenv::dotenv().ok();
     env_logger::init();
-    let data_fetcher = InputDataFetcher::default();
+    let data_fetcher = InputDataFetcher::override_new();
     let args = GenesisArgs::parse();
 
     let genesis_block = args.block;

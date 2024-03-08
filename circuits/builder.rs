@@ -152,8 +152,8 @@ impl<L: PlonkParameters<D>, const D: usize> DataCommitmentBuilder<L, D> for Circ
         let batch_end_header_hash = data_comm_proof.end_header;
 
         // Path of the data_hash and last_block_id against the Tendermint header.
-        let data_hash_path =
-            self.constant::<ArrayVariable<BoolVariable, 4>>(vec![false, true, true, false]);
+        let last_results_hash_path =
+            self.constant::<ArrayVariable<BoolVariable, 4>>(vec![true, true, false, true]);
         let last_block_id_path =
             self.constant::<ArrayVariable<BoolVariable, 4>>(vec![false, false, true, false]);
 
@@ -178,7 +178,7 @@ impl<L: PlonkParameters<D>, const D: usize> DataCommitmentBuilder<L, D> for Circ
             let data_hash_proof_root = self
                 .get_root_from_merkle_proof::<HEADER_PROOF_DEPTH, PROTOBUF_HASH_SIZE_BYTES>(
                     &data_comm_proof.data_hash_proofs[i],
-                    &data_hash_path,
+                    &last_results_hash_path,
                 );
             // The computed root of last_block_id_proofs[i] should be the hash of block curr_idx+1.
             let last_block_id_proof_root = self
@@ -362,13 +362,13 @@ impl<L: PlonkParameters<D>, const D: usize> DataCommitmentBuilder<L, D> for Circ
         let data_comm_proof = output_stream.read::<DataCommitmentProofVariable<1>>(self);
 
         // Path of the data_hash against the Tendermint header.
-        let data_hash_path =
-            self.constant::<ArrayVariable<BoolVariable, 4>>(vec![false, true, true, false]);
+        let last_results_hash_path =
+            self.constant::<ArrayVariable<BoolVariable, 4>>(vec![true, true, false, true]);
         // Confirm the data_comm_proof corresponds to the prev_header_hash.
         let data_hash_proof_root = self
             .get_root_from_merkle_proof::<HEADER_PROOF_DEPTH, PROTOBUF_HASH_SIZE_BYTES>(
                 &data_comm_proof.data_hash_proofs[0],
-                &data_hash_path,
+                &last_results_hash_path,
             );
         self.assert_is_equal(data_hash_proof_root, prev_header_hash);
 
@@ -402,7 +402,7 @@ pub(crate) mod tests {
         end_height: usize,
     ) -> (DataCommitmentProofValueType<MAX_LEAVES, F>, H256) {
         dotenv::dotenv().ok();
-        let mut input_data_fetcher = InputDataFetcher::default();
+        let mut input_data_fetcher = InputDataFetcher::override_new();
 
         let rt = Runtime::new().expect("failed to create tokio runtime");
 
