@@ -20,7 +20,7 @@ pub const ENC_DATA_ROOT_TUPLE_SIZE_BYTES: usize = 64;
 // Header indices for the Merkle tree.
 pub const BLOCK_HEIGHT_INDEX: usize = 2;
 pub const LAST_BLOCK_ID_INDEX: usize = 4;
-pub const DATA_HASH_INDEX: usize = 6;
+pub const LAST_RESULTS_HASH_INDEX: usize = 11;
 
 /// Petrol-1's chain config.
 pub const PETROL_1_CHAIN_ID_BYTES: &[u8] = b"petrol-1";

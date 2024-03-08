@@ -27,7 +27,9 @@ pub struct DataCommitment {
 
 #[async_trait]
 pub trait DataCommitmentInputs {
-    async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32];
+    /// Overrides the default TendermintX's InputDataFetcher so that the tests from this repo
+    /// uses fixtures instead of requiring a Tendermint RPC.
+    fn override_new() -> Self;
 
     /// Get signed headers in the range [start_block_number, end_block_number] inclusive.
     async fn get_signed_header_range(
@@ -36,6 +38,12 @@ pub trait DataCommitmentInputs {
         end_block_number: u64,
     ) -> Vec<SignedHeader>;
 
+    /// Gets the bridge commitment hash specified by the start block and end block, where
+    /// end block is non-inclusive.
+    async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32];
+
+    /// Gets an inclusion proof per block in the bridge commitment specified by the start and
+    /// end block, where end block is non-inclusive.
     async fn get_data_commitment_inputs<const MAX_LEAVES: usize, F: RichField>(
         &mut self,
         start_block_number: u64,
@@ -54,6 +62,71 @@ const MAX_NUM_RETRIES: usize = 3;
 
 #[async_trait]
 impl DataCommitmentInputs for InputDataFetcher {
+    fn override_new() -> Self {
+        dotenv::dotenv().ok();
+
+        #[allow(unused_mut)]
+        #[allow(unused_assignments)]
+        let mut urls = vec![];
+
+        #[allow(unused_mut)]
+        let mut fixture_path = String::new();
+
+        #[allow(unused_mut)]
+        let mut mode;
+
+        #[cfg(test)]
+        {
+            mode = InputDataMode::Fixture;
+            fixture_path.push_str("./circuits/fixtures/petrol-1")
+        }
+        #[cfg(not(test))]
+        {
+            mode = InputDataMode::Rpc;
+            // TENDERMINT_RPC_URL is a list of comma separated tendermint rpc urls.
+            urls = env::var("TENDERMINT_RPC_URL")
+                .expect("TENDERMINT_RPC_URL is not set in .env")
+                .split(',')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+        }
+
+        Self {
+            mode,
+            urls,
+            fixture_path: fixture_path.to_string(),
+            proof_cache: HashMap::new(),
+            save: false,
+        }
+    }
+
+    async fn get_signed_header_range(
+        &self,
+        start_block_number: u64,
+        end_block_number: u64,
+    ) -> Vec<SignedHeader> {
+        // Note: Tested with 500+ concurrent requests, but monitor for any issues.
+        const MAX_BATCH_SIZE: usize = 200;
+
+        let mut signed_headers = Vec::new();
+        let mut curr_block = start_block_number;
+        while curr_block <= end_block_number {
+            let batch_end_block =
+                std::cmp::min(curr_block + MAX_BATCH_SIZE as u64, end_block_number + 1);
+            // Batch request the headers in the range [curr_block, batch_end_block).
+            let batch_signed_header_futures = (curr_block..batch_end_block)
+                .map(|i| self.get_signed_header_from_number(i))
+                .collect::<Vec<_>>();
+            let batch_signed_headers: Vec<SignedHeader> =
+                futures::future::join_all(batch_signed_header_futures).await;
+            signed_headers.extend(batch_signed_headers);
+
+            curr_block += MAX_BATCH_SIZE as u64;
+        }
+
+        signed_headers
+    }
+
     async fn get_data_commitment(&mut self, start_block: u64, end_block: u64) -> [u8; 32] {
         // If start_block == end_block, then return a dummy commitment.
         // This will occur in the context of data commitment's map reduce when leaves that contain blocks beyond the end_block.
@@ -62,13 +135,13 @@ impl DataCommitmentInputs for InputDataFetcher {
         }
 
         let file_name = format!(
-            "{}/{}-{}/data_commitment.json",
+            "{}/{}-{}/bridge_commitment.json",
             self.fixture_path,
             start_block.to_string().as_str(),
             end_block.to_string().as_str()
         );
         let route = format!(
-            "data_commitment?start={}&end={}",
+            "bridge_commitment?start={}&end={}",
             start_block.to_string().as_str(),
             end_block.to_string().as_str()
         );
@@ -99,33 +172,6 @@ impl DataCommitmentInputs for InputDataFetcher {
             .unwrap()
     }
 
-    async fn get_signed_header_range(
-        &self,
-        start_block_number: u64,
-        end_block_number: u64,
-    ) -> Vec<SignedHeader> {
-        // Note: Tested with 500+ concurrent requests, but monitor for any issues.
-        const MAX_BATCH_SIZE: usize = 200;
-
-        let mut signed_headers = Vec::new();
-        let mut curr_block = start_block_number;
-        while curr_block <= end_block_number {
-            let batch_end_block =
-                std::cmp::min(curr_block + MAX_BATCH_SIZE as u64, end_block_number + 1);
-            // Batch request the headers in the range [curr_block, batch_end_block).
-            let batch_signed_header_futures = (curr_block..batch_end_block)
-                .map(|i| self.get_signed_header_from_number(i))
-                .collect::<Vec<_>>();
-            let batch_signed_headers: Vec<SignedHeader> =
-                futures::future::join_all(batch_signed_header_futures).await;
-            signed_headers.extend(batch_signed_headers);
-
-            curr_block += MAX_BATCH_SIZE as u64;
-        }
-
-        signed_headers
-    }
-
     async fn get_data_commitment_inputs<const MAX_LEAVES: usize, F: RichField>(
         &mut self,
         start_block_number: u64,
@@ -154,8 +200,8 @@ impl DataCommitmentInputs for InputDataFetcher {
         for i in start_block_number..end_block_number + 1 {
             let signed_header = &signed_headers[(i - start_block_number) as usize];
 
-            // Don't include the data hash and corresponding proof of end_block, as the circuit's
-            // data_commitment is computed over the range [start_block, end_block - 1].
+            // Don't include the last results hash and corresponding proof of end_block, as the circuit's
+            // bridge_commitment is computed over the range [start_block, end_block - 1].
             if i < end_block_number {
                 let data_hash = signed_header.header.data_hash.unwrap();
                 data_hashes.push(data_hash.as_bytes().try_into().unwrap());
