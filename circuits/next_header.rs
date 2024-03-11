@@ -64,6 +64,7 @@ mod tests {
     use ethers::types::H256;
     use plonky2x::prelude::{DefaultBuilder, GateRegistry, HintRegistry};
     use subtle_encoding::hex;
+    use tendermint::hash::{Algorithm, Hash};
 
     use super::*;
     use crate::consts::{Petrol1Config, PETROL_1_CHAIN_ID_SIZE_BYTES};
@@ -93,7 +94,7 @@ mod tests {
     fn test_next_header_template<const MAX_VALIDATOR_SET_SIZE: usize>(
         prev_block: usize,
         prev_header_hash: [u8; 32],
-    ) {
+    ) -> (H256, H256) {
         env::set_var("RUST_LOG", "debug");
         env_logger::try_init().unwrap_or_default();
 
@@ -125,6 +126,8 @@ mod tests {
 
         let data_commitment = output.evm_read::<Bytes32Variable>();
         println!("data_commitment {:?}", data_commitment);
+
+        (next_header_hash, data_commitment)
     }
 
     #[test]
@@ -137,9 +140,29 @@ mod tests {
             hex::decode_upper("6CC3FB1D4379F9D21F8944CAB76901A1DC8D45F08A64A8ABE2D8436BA5E298C4")
                 .unwrap();
 
-        test_next_header_template::<MAX_VALIDATOR_SET_SIZE>(
+        let (next_header_hash, data_commitment) = test_next_header_template::<MAX_VALIDATOR_SET_SIZE>(
             start_block as usize,
             start_header_hash.as_slice().try_into().unwrap(),
+        );
+
+        assert_eq!(
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "9F2C593C74DA25ACDC34474C845463360E244EE15BFDC52D8308AB9339B95CC2",
+            )
+            .unwrap()
+            .as_bytes(),
+            next_header_hash.as_bytes()
+        );
+
+        assert_eq!(
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "B5AA1D1FCC66E924808D5D94DC4134D876668A326A4989743F663F281F3DE3B6",
+            )
+            .unwrap()
+            .as_bytes(),
+            data_commitment.as_bytes()
         );
     }
 

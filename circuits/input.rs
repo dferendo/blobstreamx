@@ -205,13 +205,13 @@ impl DataCommitmentInputs for InputDataFetcher {
             // Don't include the last results hash and corresponding proof of end_block, as the circuit's
             // bridge_commitment is computed over the range [start_block, end_block - 1].
             if i < end_block_number {
-                let data_hash = signed_header.header.data_hash.unwrap();
+                let data_hash = signed_header.header.last_results_hash.unwrap();
                 data_hashes.push(data_hash.as_bytes().try_into().unwrap());
 
                 let data_hash_proof = self.get_inclusion_proof::<PROTOBUF_HASH_SIZE_BYTES, F>(
                     &signed_header.header,
                     LAST_RESULTS_HASH_INDEX as u64,
-                    signed_header.header.data_hash.unwrap().encode_vec(),
+                    signed_header.header.last_results_hash.unwrap().encode_vec(),
                 );
                 data_hash_proofs.push(data_hash_proof);
             }
