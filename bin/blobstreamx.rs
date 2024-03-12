@@ -21,6 +21,7 @@ struct BlobstreamXConfig {
     chain_id: u32,
     local_prove_mode: bool,
     local_relay_mode: bool,
+    mock_local_prove: bool,
 }
 
 type NextHeaderInputTuple = sol! { tuple(uint64, bytes32) };
@@ -35,6 +36,42 @@ struct BlobstreamXOperator {
     contract: BlobstreamX<Provider<Http>>,
     client: SuccinctClient,
     data_fetcher: InputDataFetcher,
+}
+
+#[async_trait]
+pub trait FuelStreamXClient {
+    /// Submit a request to the Succinct X API.
+    /// If in local prove mode, generates a local proof and returns the request_id after completion.
+    /// If in mock local proof mode, the proof generation is mocked if the inputs matches with already
+    /// generated proofs.
+    async fn submit_fuel_stream_x_request(
+        &self,
+        chain_id: u32,
+        to: Address,
+        calldata: Bytes,
+        function_id: B256,
+        input: Bytes,
+        mock_local_prove: bool,
+    ) -> Result<String>;
+}
+
+impl FuelStreamXClient for SuccinctClient {
+    async fn submit_fuel_stream_x_request(
+        &self,
+        chain_id: u32,
+        to: Address,
+        calldata: Bytes,
+        function_id: B256,
+        input: Bytes,
+        mock_local_prove: bool,
+    ) -> Result<String> {
+        if mock_local_prove {
+            // TODO:
+        }
+
+        self.submit_request(chain_id, to, calldata, function_id, input)
+            .await
+    }
 }
 
 impl BlobstreamXOperator {
@@ -52,6 +89,9 @@ impl BlobstreamXOperator {
         let local_relay_mode: String =
             env::var("LOCAL_RELAY_MODE").unwrap_or(String::from("false"));
         let local_relay_mode_bool = local_relay_mode.parse::<bool>().unwrap();
+        let mock_local_prove: String =
+            env::var("MOCK_LOCAL_PROVE").unwrap_or(String::from("false"));
+        let mock_local_prove_bool = mock_local_prove.parse::<bool>().unwrap();
 
         let ethereum_rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
         let provider = Provider::<Http>::try_from(ethereum_rpc_url.clone())
@@ -64,6 +104,7 @@ impl BlobstreamXOperator {
             chain_id: chain_id.parse::<u32>().expect("invalid chain id"),
             local_prove_mode: local_prove_mode_bool,
             local_relay_mode: local_relay_mode_bool,
+            mock_local_prove: mock_local_prove_bool,
         };
 
         let data_fetcher = InputDataFetcher::override_new();

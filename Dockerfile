@@ -17,8 +17,4 @@ RUN cargo build --bin blobstreamx --release
 # Runner
 # --------------------------------------------------------
 
-# TODO: separate builder from runner to make resultant image more lightweight
-
-# EXPOSE 8545
-
-# ENTRYPOINT ["anvil", "--host", "0.0.0.0", "--state", "./data/"]
+ENTRYPOINT ["anvil", "--host", "0.0.0.0", "--state", "./data/"]
