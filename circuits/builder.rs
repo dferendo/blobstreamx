@@ -402,7 +402,7 @@ pub(crate) mod tests {
         end_height: usize,
     ) -> (DataCommitmentProofValueType<MAX_LEAVES, F>, H256) {
         dotenv::dotenv().ok();
-        let mut input_data_fetcher = InputDataFetcher::override_new();
+        let mut input_data_fetcher = InputDataFetcher::default();
 
         let rt = Runtime::new().expect("failed to create tokio runtime");
 

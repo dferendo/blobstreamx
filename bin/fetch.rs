@@ -27,7 +27,7 @@ pub async fn main() {
     env_logger::init();
     let mut data_fetcher = InputDataFetcher {
         save: true,
-        ..DataCommitmentInputs::override_new()
+        ..DataCommitmentInputs::default()
     };
 
     let args = FetchArgs::parse();

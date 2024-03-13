@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::Path;
 #[allow(unused_imports)]
 use std::{env, fs};
@@ -29,10 +28,6 @@ pub struct DataCommitment {
 
 #[async_trait]
 pub trait DataCommitmentInputs {
-    /// Overrides the default TendermintX's InputDataFetcher so that the tests from this repo
-    /// uses fixtures instead of requiring a Tendermint RPC.
-    fn override_new() -> Self;
-
     /// Get signed headers in the range [start_block_number, end_block_number] inclusive.
     async fn get_signed_header_range(
         &self,
@@ -64,44 +59,6 @@ const MAX_NUM_RETRIES: usize = 3;
 
 #[async_trait]
 impl DataCommitmentInputs for InputDataFetcher {
-    fn override_new() -> Self {
-        dotenv::dotenv().ok();
-
-        #[allow(unused_mut)]
-        #[allow(unused_assignments)]
-        let mut urls = vec![];
-
-        #[allow(unused_mut)]
-        let mut fixture_path = String::new();
-
-        #[allow(unused_mut)]
-        let mut mode;
-
-        #[cfg(test)]
-        {
-            mode = InputDataMode::Fixture;
-            fixture_path.push_str("./circuits/fixtures/petrol-1")
-        }
-        #[cfg(not(test))]
-        {
-            mode = InputDataMode::Rpc;
-            // TENDERMINT_RPC_URL is a list of comma separated tendermint rpc urls.
-            urls = env::var("TENDERMINT_RPC_URL")
-                .expect("TENDERMINT_RPC_URL is not set in .env")
-                .split(',')
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
-        }
-
-        Self {
-            mode,
-            urls,
-            fixture_path: fixture_path.to_string(),
-            proof_cache: HashMap::new(),
-            save: false,
-        }
-    }
-
     async fn get_signed_header_range(
         &self,
         start_block_number: u64,
@@ -311,25 +268,16 @@ impl DataCommitmentInputs for InputDataFetcher {
 #[cfg(test)]
 mod tests {
     use tendermint::hash::{Algorithm, Hash};
-    use tendermintx::input::{InputDataFetcher, InputDataMode};
+    use tendermintx::input::InputDataFetcher;
 
     use crate::input::DataCommitmentInputs;
-
-    #[test]
-    fn test_override_new() {
-        let data_fetcher = InputDataFetcher::override_new();
-
-        // Verify that fixture is used during testing.
-        assert_eq!(data_fetcher.fixture_path, "./circuits/fixtures/petrol-1");
-        assert_eq!(data_fetcher.mode, InputDataMode::Fixture);
-    }
 
     #[tokio::test]
     async fn test_get_signed_header_range() {
         let start_block = 2u64;
         let end_block = 6u64; // Inclusive
 
-        let data_fetcher = InputDataFetcher::override_new();
+        let data_fetcher = InputDataFetcher::default();
 
         let signed_headers = data_fetcher
             .get_signed_header_range(start_block, end_block)
@@ -391,7 +339,7 @@ mod tests {
         let start_block = 2u64;
         let end_block = 6u64; // Not inclusive
 
-        let mut data_fetcher = InputDataFetcher::override_new();
+        let mut data_fetcher = InputDataFetcher::default();
 
         let data_commitment = data_fetcher
             .get_data_commitment(start_block, end_block)

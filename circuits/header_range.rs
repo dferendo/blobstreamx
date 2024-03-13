@@ -192,13 +192,13 @@ mod tests {
     #[cfg_attr(feature = "ci", ignore)]
     fn test_header_range_small() {
         // Test variable length NUM_BLOCKS.
-        const MAX_VALIDATOR_SET_SIZE: usize = 8;
+        const MAX_VALIDATOR_SET_SIZE: usize = 5;
         const NB_MAP_JOBS: usize = 2;
         const BATCH_SIZE: usize = 4;
 
         let start_block = 2u64;
         let start_header_hash =
-            hex::decode_upper("6CC3FB1D4379F9D21F8944CAB76901A1DC8D45F08A64A8ABE2D8436BA5E298C4")
+            hex::decode_upper("9BC4B05107717B1C94DBAE08FBB2BC76D9C0AAD476FCF6D3C111BA98F63E809C")
                 .unwrap();
         let end_block = 6u64;
 
@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(
             Hash::from_hex_upper(
                 Algorithm::Sha256,
-                "11F76B0D87679841CAC3BE7918BE6E8D0308CB9B7AD5C79A04EB53159779E25A",
+                "D4890856E9FE3366A8805FEF42DB0C0E437377DAE8DC4FB04F9483F79F779759",
             )
             .unwrap()
             .as_bytes(),
