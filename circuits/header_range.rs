@@ -90,6 +90,7 @@ mod tests {
     use ethers::types::H256;
     use plonky2x::prelude::{DefaultBuilder, GateRegistry, HintRegistry};
     use subtle_encoding::hex;
+    use tendermint::hash::{Algorithm, Hash};
 
     use super::*;
     use crate::consts::{Petrol1Config, PETROL_1_CHAIN_ID_SIZE_BYTES};
@@ -144,7 +145,7 @@ mod tests {
         start_block: usize,
         start_header_hash: [u8; 32],
         end_block: usize,
-    ) {
+    ) -> (H256, H256) {
         // Note: This will request via RPC, as it is not tagged with #[test].
         env::set_var("RUST_LOG", "debug");
         env_logger::try_init().unwrap_or_default();
@@ -183,6 +184,8 @@ mod tests {
 
         let data_commitment = output.evm_read::<Bytes32Variable>();
         println!("data_commitment {:?}", data_commitment);
+
+        (target_header_hash, data_commitment)
     }
 
     #[test]
@@ -191,21 +194,39 @@ mod tests {
         // Test variable length NUM_BLOCKS.
         const MAX_VALIDATOR_SET_SIZE: usize = 8;
         const NB_MAP_JOBS: usize = 2;
-        const BATCH_SIZE: usize = 2;
+        const BATCH_SIZE: usize = 4;
 
         let start_block = 2u64;
         let start_header_hash =
             hex::decode_upper("6CC3FB1D4379F9D21F8944CAB76901A1DC8D45F08A64A8ABE2D8436BA5E298C4")
                 .unwrap();
         let end_block = 6u64;
-        let _ =
-            hex::decode_upper("11F76B0D87679841CAC3BE7918BE6E8D0308CB9B7AD5C79A04EB53159779E25A")
-                .unwrap();
 
-        test_header_range_template::<MAX_VALIDATOR_SET_SIZE, NB_MAP_JOBS, BATCH_SIZE>(
-            start_block as usize,
-            start_header_hash.as_slice().try_into().unwrap(),
-            end_block as usize,
+        let (target_header_hash, data_commitment) =
+            test_header_range_template::<MAX_VALIDATOR_SET_SIZE, NB_MAP_JOBS, BATCH_SIZE>(
+                start_block as usize,
+                start_header_hash.as_slice().try_into().unwrap(),
+                end_block as usize,
+            );
+
+        assert_eq!(
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "11F76B0D87679841CAC3BE7918BE6E8D0308CB9B7AD5C79A04EB53159779E25A",
+            )
+            .unwrap()
+            .as_bytes(),
+            target_header_hash.as_bytes()
+        );
+
+        assert_eq!(
+            Hash::from_hex_upper(
+                Algorithm::Sha256,
+                "BCC70C867ACDEF1BF569308071806404B5202BAE0EB52E951A32B619978675DF",
+            )
+            .unwrap()
+            .as_bytes(),
+            data_commitment.as_bytes()
         );
     }
 
