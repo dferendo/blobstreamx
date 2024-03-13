@@ -9,7 +9,6 @@
 
 use std::env;
 
-use blobstreamx::input::DataCommitmentInputs;
 use clap::Parser;
 use tendermintx::input::InputDataFetcher;
 
@@ -27,7 +26,7 @@ pub async fn main() {
     env_logger::init();
     let mut data_fetcher = InputDataFetcher {
         save: true,
-        ..DataCommitmentInputs::default()
+        ..InputDataFetcher::default()
     };
 
     let args = FetchArgs::parse();

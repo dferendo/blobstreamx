@@ -4,7 +4,6 @@ use std::str::FromStr;
 use alloy_primitives::{Address, Bytes, FixedBytes, B256};
 use alloy_sol_types::{sol, SolType};
 use anyhow::Result;
-use blobstreamx::input::DataCommitmentInputs;
 use ethers::abi::AbiEncode;
 use ethers::contract::abigen;
 use ethers::providers::{Http, Provider};
@@ -38,12 +37,12 @@ struct BlobstreamXOperator {
     data_fetcher: InputDataFetcher,
 }
 
-#[async_trait]
 pub trait FuelStreamXClient {
     /// Submit a request to the Succinct X API.
     /// If in local prove mode, generates a local proof and returns the request_id after completion.
     /// If in mock local proof mode, the proof generation is mocked if the inputs matches with already
     /// generated proofs.
+    #[allow(async_fn_in_trait)]
     async fn submit_fuel_stream_x_request(
         &self,
         chain_id: u32,
@@ -167,12 +166,13 @@ impl BlobstreamXOperator {
 
         let request_id = self
             .client
-            .submit_request(
+            .submit_fuel_stream_x_request(
                 self.config.chain_id,
                 self.config.address,
                 function_data.into(),
                 next_header_function_id,
                 Bytes::copy_from_slice(&input),
+                self.config.mock_local_prove,
             )
             .await?;
 
@@ -202,12 +202,13 @@ impl BlobstreamXOperator {
 
         let request_id = self
             .client
-            .submit_request(
+            .submit_fuel_stream_x_request(
                 self.config.chain_id,
                 self.config.address,
                 function_data.into(),
                 header_range_function_id,
                 Bytes::copy_from_slice(&input),
+                self.config.mock_local_prove,
             )
             .await?;
 
