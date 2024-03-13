@@ -14,11 +14,11 @@
 //!
 //!
 //!
+use blobstreamx::consts::{Petrol1Config, PETROL_1_CHAIN_ID_SIZE_BYTES};
 use blobstreamx::next_header::CombinedStepCircuit;
 use plonky2x::backend::function::Plonky2xFunction;
-use tendermintx::config::{CelestiaConfig, CELESTIA_CHAIN_ID_SIZE_BYTES};
 
 fn main() {
-    const VALIDATOR_SET_SIZE_MAX: usize = 100;
-    CombinedStepCircuit::<VALIDATOR_SET_SIZE_MAX, CELESTIA_CHAIN_ID_SIZE_BYTES, CelestiaConfig>::entrypoint();
+    const VALIDATOR_SET_SIZE_MAX: usize = 5;
+    CombinedStepCircuit::<VALIDATOR_SET_SIZE_MAX, PETROL_1_CHAIN_ID_SIZE_BYTES, Petrol1Config>::entrypoint();
 }

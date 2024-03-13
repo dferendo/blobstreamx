@@ -14,19 +14,19 @@
 //!
 //!
 //!
+use blobstreamx::consts::{Petrol1Config, PETROL_1_CHAIN_ID_SIZE_BYTES};
 use blobstreamx::header_range::CombinedSkipCircuit;
 use plonky2x::backend::function::Plonky2xFunction;
-use tendermintx::config::{CelestiaConfig, CELESTIA_CHAIN_ID_SIZE_BYTES};
 
 fn main() {
     // Celestia's maxmimum data commitment size is 1000: https://github.com/celestiaorg/celestia-core/blob/6933af1ead0ddf4a8c7516690e3674c6cdfa7bd8/pkg/consts/consts.go#L44.
-    const VALIDATOR_SET_SIZE_MAX: usize = 100;
+    const VALIDATOR_SET_SIZE_MAX: usize = 5;
     const NB_MAP_JOBS: usize = 64;
     const BATCH_SIZE: usize = 16;
     CombinedSkipCircuit::<
         VALIDATOR_SET_SIZE_MAX,
-        CELESTIA_CHAIN_ID_SIZE_BYTES,
-        CelestiaConfig,
+        PETROL_1_CHAIN_ID_SIZE_BYTES,
+        Petrol1Config,
         NB_MAP_JOBS,
         BATCH_SIZE,
     >::entrypoint();
