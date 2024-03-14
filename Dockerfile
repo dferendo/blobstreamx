@@ -17,4 +17,4 @@ RUN cargo build --bin blobstreamx --release
 # Runner
 # --------------------------------------------------------
 
-ENTRYPOINT ["anvil", "--host", "0.0.0.0", "--state", "./data/"]
+# ENTRYPOINT ["anvil", "--host", "0.0.0.0", "--state", "./data/"]
