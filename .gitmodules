@@ -7,6 +7,3 @@
 [submodule "contracts/lib/tendermintx"]
 	path = contracts/lib/tendermintx
 	url = https://github.com/succinctlabs/tendermintx
-[submodule "lib/blobstream-contracts"]
-	path = lib/blobstream-contracts
-	url = https://github.com/celestiaorg/blobstream-contracts
