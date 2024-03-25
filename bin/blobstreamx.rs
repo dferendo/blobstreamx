@@ -137,6 +137,27 @@ impl BlobstreamXOperator {
             config.local_relay_mode,
         );
 
+        // Mocking for E2E
+        let mock_succinct_server = env::var("MOCK_SUCCINCT_SERVER")
+            .unwrap_or(String::from("false"))
+            .parse::<bool>()
+            .unwrap();
+
+        if mock_succinct_server {
+            let opts = mockito::ServerOpts {
+                host: "127.0.0.1",
+                port: 1234,
+                ..Default::default()
+            };
+            let mut server = mockito::Server::new_with_opts_async(opts).await;
+
+            server
+                .mock("POST", "/request/new")
+                .match_header("content-type", "application/json")
+                .match_body(mockito::Matcher::Any)
+                .create();
+        }
+
         Self {
             config,
             ethereum_rpc_url,

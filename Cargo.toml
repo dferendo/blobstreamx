@@ -73,3 +73,4 @@ tendermint = "0.33.0"
 tendermint-proto = "0.33.0"
 tendermintx = {git = "https://github.com/succinctlabs/tendermintx.git"}
 tokio = {version = "1.29.1", features = ["full"]}
+mockito = "1.4.0"
