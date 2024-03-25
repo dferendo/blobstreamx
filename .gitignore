@@ -6,3 +6,4 @@ build/
 proofs/
 artifacts/
 .vscode/
+.idea/
