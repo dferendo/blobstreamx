@@ -523,7 +523,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.8",
  "subtle-encoding",
- "succinct-client",
+ "succinct-client 0.1.0 (git+https://github.com/dferendo/succinctx.git)",
  "tendermint",
  "tendermint-proto",
  "tendermintx",
@@ -4202,6 +4202,24 @@ checksum = "734676eb262c623cec13c3155096e08d1f8f29adce39ba17948b18dad1e54142"
 [[package]]
 name = "succinct-client"
 version = "0.1.0"
+source = "git+https://github.com/dferendo/succinctx.git#0fe7ca08bd2a56ef1af6453b45204dfb5da8c321"
+dependencies = [
+ "alloy-primitives",
+ "anyhow",
+ "ethers",
+ "log",
+ "mockito",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "toml",
+ "uuid 1.7.0",
+]
+
+[[package]]
+name = "succinct-client"
+version = "0.1.0"
 source = "git+https://github.com/succinctlabs/succinctx.git#98373274acb5609c74e2b09d1741d6abddc173ef"
 dependencies = [
  "alloy-primitives",
@@ -4387,7 +4405,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.8",
  "subtle-encoding",
- "succinct-client",
+ "succinct-client 0.1.0 (git+https://github.com/succinctlabs/succinctx.git)",
  "tendermint",
  "tendermint-proto",
  "tokio",

@@ -20,7 +20,6 @@ struct BlobstreamXConfig {
     chain_id: u32,
     local_prove_mode: bool,
     local_relay_mode: bool,
-    mock_local_prove: bool,
 }
 
 type NextHeaderInputTuple = sol! { tuple(uint64, bytes32) };
@@ -35,42 +34,6 @@ struct BlobstreamXOperator {
     contract: BlobstreamX<Provider<Http>>,
     client: SuccinctClient,
     data_fetcher: InputDataFetcher,
-}
-
-pub trait FuelStreamXClient {
-    /// Submit a request to the Succinct X API.
-    /// If in local prove mode, generates a local proof and returns the request_id after completion.
-    /// If in mock local proof mode, the proof generation is mocked if the inputs matches with already
-    /// generated proofs.
-    #[allow(async_fn_in_trait)]
-    async fn submit_fuel_stream_x_request(
-        &self,
-        chain_id: u32,
-        to: Address,
-        calldata: Bytes,
-        function_id: B256,
-        input: Bytes,
-        mock_local_prove: bool,
-    ) -> Result<String>;
-}
-
-impl FuelStreamXClient for SuccinctClient {
-    async fn submit_fuel_stream_x_request(
-        &self,
-        chain_id: u32,
-        to: Address,
-        calldata: Bytes,
-        function_id: B256,
-        input: Bytes,
-        mock_local_prove: bool,
-    ) -> Result<String> {
-        if mock_local_prove {
-            // TODO:
-        }
-
-        self.submit_request(chain_id, to, calldata, function_id, input)
-            .await
-    }
 }
 
 impl BlobstreamXOperator {
@@ -88,9 +51,6 @@ impl BlobstreamXOperator {
         let local_relay_mode: String =
             env::var("LOCAL_RELAY_MODE").unwrap_or(String::from("false"));
         let local_relay_mode_bool = local_relay_mode.parse::<bool>().unwrap();
-        let mock_local_prove: String =
-            env::var("MOCK_LOCAL_PROVE").unwrap_or(String::from("false"));
-        let mock_local_prove_bool = mock_local_prove.parse::<bool>().unwrap();
 
         let ethereum_rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
         let provider = Provider::<Http>::try_from(ethereum_rpc_url.clone())
@@ -103,7 +63,6 @@ impl BlobstreamXOperator {
             chain_id: chain_id.parse::<u32>().expect("invalid chain id"),
             local_prove_mode: local_prove_mode_bool,
             local_relay_mode: local_relay_mode_bool,
-            mock_local_prove: mock_local_prove_bool,
         };
 
         let data_fetcher = InputDataFetcher::default();
@@ -137,27 +96,6 @@ impl BlobstreamXOperator {
             config.local_relay_mode,
         );
 
-        // Mocking for E2E
-        let mock_succinct_server = env::var("MOCK_SUCCINCT_SERVER")
-            .unwrap_or(String::from("false"))
-            .parse::<bool>()
-            .unwrap();
-
-        if mock_succinct_server {
-            let opts = mockito::ServerOpts {
-                host: "127.0.0.1",
-                port: 1234,
-                ..Default::default()
-            };
-            let mut server = mockito::Server::new_with_opts_async(opts).await;
-
-            server
-                .mock("POST", "/request/new")
-                .match_header("content-type", "application/json")
-                .match_body(mockito::Matcher::Any)
-                .create();
-        }
-
         Self {
             config,
             ethereum_rpc_url,
@@ -187,13 +125,12 @@ impl BlobstreamXOperator {
 
         let request_id = self
             .client
-            .submit_fuel_stream_x_request(
+            .submit_request(
                 self.config.chain_id,
                 self.config.address,
                 function_data.into(),
                 next_header_function_id,
                 Bytes::copy_from_slice(&input),
-                self.config.mock_local_prove,
             )
             .await?;
 
@@ -223,13 +160,12 @@ impl BlobstreamXOperator {
 
         let request_id = self
             .client
-            .submit_fuel_stream_x_request(
+            .submit_request(
                 self.config.chain_id,
                 self.config.address,
                 function_data.into(),
                 header_range_function_id,
                 Bytes::copy_from_slice(&input),
-                self.config.mock_local_prove,
             )
             .await?;
 
@@ -370,5 +306,34 @@ async fn main() {
     env_logger::init();
 
     let mut operator = BlobstreamXOperator::new().await;
-    operator.run().await;
+
+    // Mocking for E2E
+    let mock_succinct_server = env::var("MOCK_SUCCINCT_SERVER")
+        .unwrap_or(String::from("false"))
+        .parse::<bool>()
+        .unwrap();
+
+    match mock_succinct_server {
+        true => {
+            let opts = mockito::ServerOpts {
+                host: "127.0.0.1",
+                port: 1234,
+                ..Default::default()
+            };
+            let mut server = mockito::Server::new_with_opts_async(opts).await;
+
+            let _m = Some(
+                server
+                    .mock("POST", "/request/new")
+                    .match_header("content-Type", "application/json")
+                    .match_header("authorization", mockito::Matcher::Any)
+                    .match_body(mockito::Matcher::Any)
+                    .with_status(201)
+                    .with_body("{\"request_id\": \"123456\"}")
+                    .create(),
+            );
+            operator.run().await
+        }
+        _ => operator.run().await,
+    }
 }
