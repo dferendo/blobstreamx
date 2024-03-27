@@ -21,7 +21,7 @@ struct BlobstreamXRelayer {
 
 impl BlobstreamXRelayer {
     pub fn new() -> Self {
-        let ethereum_rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
+        let ethereum_rpc_url = env::var("ETHEREUM_RPC_URL").expect("ETHEREUM_RPC_URL must be set");
         let private_key =
             env::var("PRIVATE_KEY").unwrap_or(String::from("0x00000000000000000000000000000000"));
         let wallet = LocalWallet::from_str(&private_key).expect("invalid private key");

@@ -13,7 +13,7 @@ use succinct_client::request::SuccinctClient;
 use tendermintx::input::InputDataFetcher;
 
 // Note: Update ABI when updating contract.
-abigen!(BlobstreamX, "./abi/BlobstreamX.abi.json");
+abigen!(BlobstreamX, "./abi/FuelStreamX.abi.json");
 
 struct BlobstreamXConfig {
     address: Address,
@@ -52,7 +52,7 @@ impl BlobstreamXOperator {
             env::var("LOCAL_RELAY_MODE").unwrap_or(String::from("false"));
         let local_relay_mode_bool = local_relay_mode.parse::<bool>().unwrap();
 
-        let ethereum_rpc_url = env::var("RPC_URL").expect("RPC_URL must be set");
+        let ethereum_rpc_url = env::var("ETHEREUM_RPC_URL").expect("ETHEREUM_RPC_URL must be set");
         let provider = Provider::<Http>::try_from(ethereum_rpc_url.clone())
             .expect("could not connect to client");
 

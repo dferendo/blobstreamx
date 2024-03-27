@@ -13,10 +13,10 @@ forge bind
 cd ..
 
 # JSON file containing the ABI
-ABI_JSON="contracts/out/BlobstreamX.sol/BlobstreamX.json"
+ABI_JSON="contracts/out/FuelStreamX.sol/FuelStreamX.json"
 
 # Use Python to extract the ABI field and save it
-python3 -c "import json; f=open('$ABI_JSON'); data=json.load(f); print(json.dumps(data['abi']))" > abi/BlobstreamX.abi.json
+python3 -c "import json; f=open('$ABI_JSON'); data=json.load(f); print(json.dumps(data['abi']))" > abi/FuelStreamX.abi.json
 
 # Ensure the abi directory exists
 mkdir -p abi
