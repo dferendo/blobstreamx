@@ -13,7 +13,7 @@ use succinct_client::request::SuccinctClient;
 use tendermintx::input::InputDataFetcher;
 
 // Note: Update ABI when updating contract.
-abigen!(BlobstreamX, "./abi/FuelStreamX.abi.json");
+abigen!(FuelStreamX, "./abi/FuelStreamX.abi.json");
 
 struct BlobstreamXConfig {
     address: Address,
@@ -31,7 +31,7 @@ struct BlobstreamXOperator {
     ethereum_rpc_url: String,
     wallet: Option<LocalWallet>,
     gateway_address: Option<String>,
-    contract: BlobstreamX<Provider<Http>>,
+    contract: FuelStreamX<Provider<Http>>,
     client: SuccinctClient,
     data_fetcher: InputDataFetcher,
 }
@@ -56,7 +56,7 @@ impl BlobstreamXOperator {
         let provider = Provider::<Http>::try_from(ethereum_rpc_url.clone())
             .expect("could not connect to client");
 
-        let contract = BlobstreamX::new(address.0 .0, provider.into());
+        let contract = FuelStreamX::new(address.0 .0, provider.into());
 
         let config = BlobstreamXConfig {
             address,
