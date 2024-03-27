@@ -2,7 +2,7 @@
 # Builder
 # --------------------------------------------------------
 
-# Use the latest foundry image
+# Use the latest rust image
 FROM rust:1.76.0
 
 WORKDIR /app
@@ -10,11 +10,11 @@ WORKDIR /app
 # Build files
 COPY . .
 
-# Build the BlobstreamX operator. No circuits required since everything is ran using Succinct API.
+# Build the BlobstreamX operator
 RUN cargo build --bin blobstreamx --release
 
 # --------------------------------------------------------
 # Runner
 # --------------------------------------------------------
 
-# ENTRYPOINT ["anvil", "--host", "0.0.0.0", "--state", "./data/"]
+ENTRYPOINT ["cargo", "run", "--bin", "blobstreamx", "--release"]
