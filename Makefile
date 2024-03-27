@@ -12,6 +12,8 @@ RELAYER_DOCKER_CONTAINER_NAME := "fuel-stream-x-relayer-container"
 ###                                 Docker                                  ###
 ###############################################################################
 
+build-all-docker-images: build-operator-docker-image build-relayer-docker-image
+
 build-operator-docker-image:
 	@echo "🤖 Building Operator Docker image..."
 
