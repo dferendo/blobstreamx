@@ -209,9 +209,14 @@ impl BlobstreamXOperator {
             // Get the head of the chain.
             let latest_signed_header = self.data_fetcher.get_latest_signed_header().await;
             let latest_block = latest_signed_header.header.height.value();
+            info!("latest_block {}: ", latest_block);
 
             // Subtract 5 blocks to account for the time it takes for a block to be processed by
             // consensus.
+            if latest_block - 5 < 1 {
+                continue;
+            }
+
             let latest_stable_block = latest_block - 5;
             info!("The latest stable block is: {}", latest_stable_block);
 
@@ -265,7 +270,7 @@ impl BlobstreamXOperator {
                         .await
                     {
                         Ok(request_id) => {
-                            info!("Header range request submitted: {}", request_id);
+                            info!("Header range request submitted: {}, current block: {}, target block: {}", request_id, current_block, target_block);
 
                             // If in local mode, this will submit the request on-chain.
                             let res = self
@@ -329,7 +334,7 @@ async fn main() {
                     .match_header("authorization", mockito::Matcher::Any)
                     .match_body(mockito::Matcher::Any)
                     .with_status(201)
-                    .with_body("{\"request_id\": \"123456\"}")
+                    .with_body("{\"request_id\": \"1\"}")
                     .create(),
             );
             operator.run().await

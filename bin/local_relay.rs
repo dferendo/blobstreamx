@@ -10,7 +10,7 @@ use log::{error, info};
 use succinct_client::request::SuccinctClient;
 
 // Note: Update ABI when updating contract.
-abigen!(BlobstreamX, "./abi/BlobstreamX.abi.json");
+abigen!(FuelStreamX, "./abi/FuelStreamX.abi.json");
 
 struct BlobstreamXRelayer {
     client: SuccinctClient,
