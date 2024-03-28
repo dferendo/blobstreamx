@@ -270,7 +270,7 @@ impl BlobstreamXOperator {
                         .await
                     {
                         Ok(request_id) => {
-                            info!("Header range request submitted: {}, current block: {}, target block: {}", request_id, current_block, target_block);
+                            info!("Header range request submitted: {}, start block: {}, target block: {}", request_id, current_block, target_block);
 
                             // If in local mode, this will submit the request on-chain.
                             let res = self
