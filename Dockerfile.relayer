@@ -17,5 +17,4 @@ RUN cargo build --bin local_relay --release
 # Runner
 # --------------------------------------------------------
 
-# TODO: request Id need to be passed
 ENTRYPOINT ["cargo", "run", "--bin", "local_relay", "--release"]
