@@ -10,6 +10,9 @@ WORKDIR /app
 # Build files
 COPY . .
 
+# Move scripts into WORKDIR for convenience
+COPY ./scripts .
+
 # Build the BlobstreamX operator
 RUN cargo build --bin local_relay --release
 
@@ -17,4 +20,4 @@ RUN cargo build --bin local_relay --release
 # Runner
 # --------------------------------------------------------
 
-ENTRYPOINT ["cargo", "run", "--bin", "local_relay", "--release"]
+ENTRYPOINT ["bash", "run_relayer.sh"]
